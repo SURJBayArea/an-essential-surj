@@ -12,22 +12,21 @@ import csv
 import logging
 from datetime import datetime
 from restnavigator import Navigator
+import string
 
 # Find your token at Start Organizing > Details > API & Sync
 
 flag_log = True          # Print what happens - NOT FLLLY IMPLEMENTED YET - prefer python logging!
 
-importFile = 'sample.csv'
-
-default_chapter = "SURJ Bay Area"
-
 ############################################################
-#  usage: import_an_people.py [inputfile]
+#  usage: import_an_people.py ... inputfile
 #
-parser = argparse.ArgumentParser(
-    description='Import activities in .csv format (native NationBuilder import)')
+default_chapter = "SURJ Demo Chapter"
+default_no = "no,n,false,n/a,off,0"
+
+parser = argparse.ArgumentParser(description='Import people from a NationBuilder Export (CSV)')
 group = parser.add_mutually_exclusive_group()
-parser.add_argument('--group', '-g', help='Action Network Group')
+parser.add_argument('--group', '-g', default=default_chapter, help='Action Network Group. Also profile name in an_profiles.py.')
 parser.add_argument('--start', '-s', default=1, type=int,
                     help='First row to process (starting at 1)')
 group.add_argument('--end', '-e', type=int, help='Last row to process')
@@ -35,22 +34,23 @@ group.add_argument('--count', '-c', type=int, help='Number of rows to process')
 parser.add_argument('--verbose', '-v', action="store_true", help="Show data")
 parser.add_argument('--unsubscribed', '-u', action="store_true", help="Include unsubscribed users")
 parser.add_argument('--force', '-f', action="store_true", help="Force subscribe of existing users")
-parser.add_argument('--dry_run', '-d', action="store_true",
+parser.add_argument('--dryrun', '-d', action="store_true",
                     help="Process imported data but don't send to Action Network")
-parser.add_argument('profile', default=default_chapter, nargs='?',
-                    help='The profile name in an_profiles.py')
+parser.add_argument('--no', action="store_true", default=default_no,
+                    help="Comma separated strings that mean no tag (for tag columns)")
 parser.add_argument('inputFile', help='Importable CSV file')
 
 args = parser.parse_args()
 
 CONFIG_CHAPTER = args.group
-CONFIG_PROFILE = args.profile
 CONFIG_IMPORTFILE = args.inputFile
 CONFIG_VERBOSE = args.verbose
 CONFIG_FORCE = args.force
 CONFIG_START_INDEX = args.start
 CONFIG_INCLUDE_UNSUBSCRIBED = args.unsubscribed
-CONFIG_DRY_RUN = args.dry_run
+CONFIG_DRY_RUN = args.dryrun
+CONFIG_NO = {key: i for i, key in enumerate(args.no.lower())}
+
 MAXINDEX = 1000000
 if args.end is not None:
     CONFIG_END_INDEX = args.end
@@ -69,19 +69,19 @@ profiles = {
     }
 '''
 import an_profiles
-api_token = an_profiles.profiles.get(CONFIG_PROFILE, "Not Found")
+api_token = an_profiles.profiles.get(CONFIG_CHAPTER, "Not Found")
 if api_token == "Not Found":
-    assert api_token != "Not Found", CONFIG_PROFILE + ": API Token not found"
+    assert api_token != "Not Found", CONFIG_CHAPTER + ": API Token not found"
 else:
     if flag_log:
-        print("an_profiles: " + CONFIG_PROFILE + ": API Token found")
+        print("an_profiles: {}: API Token found".format(CONFIG_CHAPTER))
 
 aep = 'https://actionnetwork.org/api/v2/people/'
 
 tag_mapping_file = 'maptags-curated.csv'
 
 # Indicates which tags to map to
-chapter_import = CONFIG_PROFILE
+chapter_import = CONFIG_CHAPTER
 
 AN = Navigator.hal(aep)
 AN.headers['OSDI-API-Token'] = api_token
@@ -150,6 +150,8 @@ def get_tag_mapping(_importFile, _chapter):
     _map = {}
     with open(_importFile, 'r') as file:
         _reader = csv.DictReader(file)
+        if not _chapter in _reader.fieldnames:
+            logging.error("Could not find {} in {}".format(_chapter,str(_reader.fieldnames)))
         for _row in _reader:
             #print 'MAPPING:', _row['old_tag'], _row['new_tags'], _row[_chapter]
             _new_tags = []
@@ -173,6 +175,7 @@ def map_person_tags(tag_list):
         IGNORE - there are no new replacement tags
         tag1 - there is one replacement tag
         tag2, tag3 - there are two replacement tags
+        Returns list of tags to add
     '''
     _new_tags = []
     for old_tag in tag_list.split(","):
@@ -182,7 +185,7 @@ def map_person_tags(tag_list):
         # Just because the tag doesn't exist doesn't mean it's not defined
         if not old_tag in tag_mapping:
             if not old_tag in found_old_tag_already:
-                warn_str = "WARNING: Unknown tag not mapped: <" + old_tag + ">"
+                warn_str = "WARNING: Unknown tag not mapped: <{}>".format(old_tag)
                 print(warn_str)
                 logging.warning(warn_str)
                 found_old_tag_already[old_tag] = True
@@ -195,6 +198,29 @@ def map_person_tags(tag_list):
         _new_tags += tag_mapping[old_tag]
 
     return _new_tags
+
+def get_column_tags(columns):
+    ''' Look through columns for potential tags
+        Columns that are tag names start with an ASCII symbol or the prefix "tag:"
+        For example, 
+        | #Call Representatives	| ?Web Design | tag:Request Contact |
+        Returns dict { 
+            "#Call Representatives" : "#Call Representatives" ,
+            "?Web Design"           : "?Web Design",
+            "tag:Request Contact"   : "Request Contact"
+        }
+    '''
+    _column_tags = {}
+    for _col in columns:
+        if _col.lower().startswith('tag:'):
+            _column_tags[_col] = _col[4:]
+        else:
+            _firstletter = _col[0]
+            if _firstletter != ' ' and string.punctuation.find(_firstletter) != -1:
+                 _column_tags[_col] = _col
+    
+    return _column_tags
+
 
 # These are the tags we looked up that are used in the current group
 # but they don't represent all the available tags - especially
@@ -213,16 +239,19 @@ activists = 0
 
 with open(CONFIG_IMPORTFILE, 'r') as ifile:
     reader = csv.DictReader(ifile)
+    column_tags = get_column_tags(reader.fieldnames)
+    print(column_tags)
     for row in reader:
         rowid = rowid + 1
         if not CONFIG_START_INDEX <= rowid <= CONFIG_END_INDEX:
             continue
 
-        print("IMPORTING[{}]: {} <{}> opt-in {} WITH TAGS {}".format(rowid,
-                                                                     row['full_name'],
-                                                                     row['email'],
-                                                                     row['email_opt_in'],
-                                                                     row['tag_list']))
+        print("[{:0>3}] {}, {} <{}> OPT-IN {} WITH TAGS {}".format(rowid,
+                                                                   row['last_name'],
+                                                                   row['first_name'],
+                                                                   row['email'],
+                                                                   row['email_opt_in'],
+                                                                   row['tag_list']))
 
         # Action Network people import via an API must have an email
         # (exception is importnig a donation where AN will generate a fake email)
@@ -266,7 +295,12 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
                 new_person["person"]["postal_addresses"] = []
             new_person["person"]["postal_addresses"].append(address)
 
+        # NationBuilder Tag Mapping
         new_person["add_tags"] = map_person_tags(row['tag_list'])
+        for column, column_tag in column_tags.items():
+            cell = row[column].lower()
+            if cell != '' and not cell in CONFIG_NO:
+                new_person["add_tags"].append(column_tag)
 
         custom_fields = {}
         if row['mobile_number'] != '' and \
