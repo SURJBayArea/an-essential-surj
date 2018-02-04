@@ -24,7 +24,7 @@ flag_log = True          # Print what happens - NOT FLLLY IMPLEMENTED YET - pref
 default_chapter = "SURJ Demo Chapter"
 default_no = "no,n,false,n/a,off,0"
 
-parser = argparse.ArgumentParser(description='Import people from a NationBuilder Export (CSV)')
+parser = argparse.ArgumentParser(description='Import people from a NationBuilder or MailChimp Export (CSV)')
 group = parser.add_mutually_exclusive_group()
 parser.add_argument('--group', '-g', default=default_chapter, help='Action Network Group. Also profile name in an_profiles.py.')
 parser.add_argument('--start', '-s', default=1, type=int,
@@ -36,7 +36,7 @@ parser.add_argument('--unsubscribed', '-u', action="store_true", help="Include u
 parser.add_argument('--force', '-f', action="store_true", help="Force subscribe of existing users")
 parser.add_argument('--dryrun', '-d', action="store_true",
                     help="Process imported data but don't send to Action Network")
-parser.add_argument('--no', action="store_true", default=default_no,
+parser.add_argument('--no', '-n', type=str, default=default_no,
                     help="Comma separated strings that mean no tag (for tag columns)")
 parser.add_argument('inputFile', help='Importable CSV file')
 
@@ -49,7 +49,7 @@ CONFIG_FORCE = args.force
 CONFIG_START_INDEX = args.start
 CONFIG_INCLUDE_UNSUBSCRIBED = args.unsubscribed
 CONFIG_DRY_RUN = args.dryrun
-CONFIG_NO = {key: i for i, key in enumerate(args.no.lower())}
+CONFIG_NO = {key: i for i, key in enumerate(args.no.lower().split(','))}  # {'no':0, 'FALSE':1 ... }
 
 MAXINDEX = 1000000
 if args.end is not None:
@@ -73,7 +73,7 @@ api_token = an_profiles.profiles.get(CONFIG_CHAPTER, "Not Found")
 if api_token == "Not Found":
     assert api_token != "Not Found", CONFIG_CHAPTER + ": API Token not found"
 else:
-    if flag_log:
+    if CONFIG_VERBOSE:
         print("an_profiles: {}: API Token found".format(CONFIG_CHAPTER))
 
 aep = 'https://actionnetwork.org/api/v2/people/'
@@ -103,20 +103,20 @@ def get_address(row_address, address_type):
     _address = {}
 
     _address_lines = []
-    if row_address[address_type + '_address1'] != '':
+    if row_address.get(address_type + '_address1','') != '':
         _address_lines.append(row_address[address_type + '_address1'])
-    if row_address[address_type + '_address2'] != '':
+    if row_address.get(address_type + '_address2','') != '':
         _address_lines.append(row_address[address_type + '_address2'])
-    if row_address[address_type + '_address3'] != '':
+    if row_address.get(address_type + '_address3','') != '':
         _address_lines.append(row_address[address_type + '_address3'])
     if _address_lines:
         _address["address_lines"] = _address_lines
 
-    if row_address[address_type + '_city'] != '':
+    if row_address.get(address_type + '_city','') != '':
         _address["locality"] = row_address[address_type + '_city']
-    if row_address[address_type + '_state'] != '':
+    if row_address.get(address_type + '_state','') != '':
         _address["region"] = row_address[address_type + '_state']
-    if row_address[address_type + '_zip'] != '':
+    if row_address.get(address_type + '_zip','') != '':
         _address["postal_code"] = row_address[address_type + '_zip']
 
     return _address
@@ -151,19 +151,20 @@ def get_tag_mapping(_importFile, _chapter):
     with open(_importFile, 'r') as file:
         _reader = csv.DictReader(file)
         if not _chapter in _reader.fieldnames:
-            logging.error("Could not find {} in {}".format(_chapter,str(_reader.fieldnames)))
-        for _row in _reader:
-            #print 'MAPPING:', _row['old_tag'], _row['new_tags'], _row[_chapter]
-            _new_tags = []
-            for new_tag in _row['new_tags'].split(","):
-                _new_tags.append(new_tag.strip())
-            if _row[_chapter] != '':
-                for new_tag in _row[_chapter].split(","):
+            logging.warning("Could not find {} in {}".format(_chapter,str(_reader.fieldnames)))
+        else:
+            for _row in _reader:
+                #print 'MAPPING:', _row['old_tag'], _row['new_tags'], _row[_chapter]
+                _new_tags = []
+                for new_tag in _row['new_tags'].split(","):
                     _new_tags.append(new_tag.strip())
+                if _row[_chapter] != '':
+                    for new_tag in _row[_chapter].split(","):
+                        _new_tags.append(new_tag.strip())
 
-            _map[_row['old_tag']] = _new_tags  # an array
+                _map[_row['old_tag']] = _new_tags  # an array
 
-            #print(_row['old_tag'], _new_tags)
+                #print(_row['old_tag'], _new_tags)
     return _map
 
 
@@ -240,18 +241,19 @@ activists = 0
 with open(CONFIG_IMPORTFILE, 'r') as ifile:
     reader = csv.DictReader(ifile)
     column_tags = get_column_tags(reader.fieldnames)
-    print(column_tags)
+    if CONFIG_VERBOSE:
+        print('FOUND COLUMN TAGS: {}', column_tags)
     for row in reader:
         rowid = rowid + 1
         if not CONFIG_START_INDEX <= rowid <= CONFIG_END_INDEX:
             continue
 
         print("[{:0>3}] {}, {} <{}> OPT-IN {} WITH TAGS {}".format(rowid,
-                                                                   row['last_name'],
-                                                                   row['first_name'],
+                                                                   row.get('last_name'),
+                                                                   row.get('first_name'),
                                                                    row['email'],
-                                                                   row['email_opt_in'],
-                                                                   row['tag_list']))
+                                                                   row.get('email_opt_in'),
+                                                                   row.get('tag_list')))
 
         # Action Network people import via an API must have an email
         # (exception is importnig a donation where AN will generate a fake email)
@@ -267,7 +269,7 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
         }
         # We want to import folks that opt-out because if they have donations
         # they would get automatically subscribed.
-        if row['email_opt_in'] == 'FALSE':
+        if row.get('email_opt_in') == 'FALSE':
             new_person["person"]["email_addresses"][0]["status"] = 'unsubscribed'
             if not CONFIG_INCLUDE_UNSUBSCRIBED:
                 print("UNSUBSCRIBED - IMPORT SKIPPED")
@@ -277,9 +279,9 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
                 new_person["person"]["email_addresses"][0]["status"] = 'subscribed'
 
         # Add first and last name if available
-        if row['last_name'] != '':
+        if row.get('last_name','') != '':
             new_person["person"]['family_name'] = row['last_name']
-        if row['first_name'] != '':
+        if row.get('first_name','') != '':
             new_person["person"]['given_name'] = row['first_name']
 
         address = get_primary_address(row)
@@ -296,27 +298,52 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
             new_person["person"]["postal_addresses"].append(address)
 
         # NationBuilder Tag Mapping
-        new_person["add_tags"] = map_person_tags(row['tag_list'])
+        new_person["add_tags"] = []
+        if 'tag_list' in row:
+            new_person["add_tags"] = map_person_tags(row['tag_list'])
+        # Column Tag Mapping
         for column, column_tag in column_tags.items():
             cell = row[column].lower()
             if cell != '' and not cell in CONFIG_NO:
                 new_person["add_tags"].append(column_tag)
 
         custom_fields = {}
-        if row['mobile_number'] != '' and \
-           not row['is_mobile_bad'] and \
-           row['mobile_opt_in']:
+        # Other NationBuilder Columns
+        if row.get('mobile_number','') != '' and \
+           not bool(row.get('is_mobile_bad',True)) and \
+           row.get('mobile_opt_in','TRUE'):
             custom_fields['mobile'] = row['mobile_number']
-        if row['phone_number'] != '' and not row['do_not_call']:
+        if row.get('phone_number','') != '' and not row['do_not_call']:
             custom_fields['Phone'] = row['phone_number']
         # Mapping employer field to organization (custom field)
-        if row['employer'] != '':
+        if row.get('employer','') != '':
             custom_fields['organization'] = row['employer']
         # Pull in social media handles NationBuilder may have
-        if row['facebook_username'] != '':
+        if row.get('facebook_username','') != '':
             custom_fields['facebook_username'] = row['facebook_username']
-        if row['twitter_login'] != '':
+        if row.get('twitter_login','') != '':
             custom_fields['twitter_login'] = row['twitter_login']
+
+        # MailChimp Columns
+        if row.get('phone','') != '':
+            custom_fields['Phone'] = row['phone']
+        
+        address = {}
+        address_lines = []
+        if row.get('address','') != '':
+            address_lines.append(row['address'])
+        if address_lines:
+            address["address_lines"] = address_lines
+        if row.get('city','') != '':
+            address["locality"] = row['city']
+        if row.get('state','') != '':
+            address["region"] = row['state']
+        if row.get('zip_code','') != '':
+            address["postal_code"] = row['zip_code']
+        if address:
+            if "postal_addresses" not in new_person["person"]:
+                new_person["person"]["postal_addresses"] = []
+            new_person["person"]["postal_addresses"].append(address)
 
         #print json.dumps(new_person, indent=4)
 
@@ -330,9 +357,12 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
 
         # Need to do a Person PUT to add custom fields.
         if custom_fields:
-            custom_fields['tag_list'] = None
+            if 'tag_list' in custom_fields:
+                del custom_fields['tag_list']
             if not CONFIG_DRY_RUN:
                 response = user['self'].upsert({"custom_fields" : custom_fields})
+            else:
+                new_person["custom_fields"] = custom_fields
 
         activists = activists + 1
 

@@ -12,29 +12,32 @@ Takes NationBuilder or other csv file, mapping tags and fields.
 ### Usage
 
     usage: an-import-people.py [-h] [--group GROUP] [--start START]
-                               [--end END | --count COUNT] [--verbose]
-                               [--unsubscribed] [--force] [--dry_run]
-                               [profile] inputFile
-    
-    Import activities in .csv format (native NationBuilder import)
-    
+                            [--end END | --count COUNT] [--verbose]
+                            [--unsubscribed] [--force] [--dryrun] [--no NO]
+                            inputFile
+
+    Import people from a NationBuilder or MailChimp Export (CSV)
+
     positional arguments:
-      profile               The profile name in an_profiles.py
-      inputFile             Importable CSV file
-    
+    inputFile               Importable CSV file (NationBuilde)
+
     optional arguments:
-      -h, --help            show this help message and exit
-      --group GROUP, -g GROUP
-                            Action Network Group
-      --start START, -s START
+    -h, --help              show this help message and exit
+    --group GROUP, -g GROUP
+                            Action Network Group. Also profile name in
+                            an_profiles.py.
+    --start START, -s START
                             First row to process (starting at 1)
-      --end END, -e END     Last row to process
-      --count COUNT, -c COUNT
+    --end END, -e END       Last row to process
+    --count COUNT, -c COUNT
                             Number of rows to process
-      --verbose, -v         Show data
-      --unsubscribed, -u    Include unsubscribed users
-      --force, -f           Force subscribe of existing users
-      --dry_run, -d         Process imported data but don't send to Action     Network
+    --verbose, -v           Show data
+    --unsubscribed, -u      Include unsubscribed users
+    --force, -f             Force subscribe of existing users
+    --dryrun, -d            Process imported data but don't send to Action Network
+    --no NO, -n NO          Comma separated strings that mean no tag (for tag
+                            columns)
+
   
 ## Installation
 
