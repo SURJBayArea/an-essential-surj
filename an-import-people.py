@@ -22,7 +22,7 @@ flag_log = True          # Print what happens - NOT FLLLY IMPLEMENTED YET - pref
 #  usage: import_an_people.py ... inputfile
 #
 default_chapter = "SURJ Demo Chapter"
-default_no = "no,n,false,n/a,off,0"
+default_no = "no,n,false,n/a,off,0,Not at this time"
 
 parser = argparse.ArgumentParser(description='Import people from a NationBuilder or MailChimp Export (CSV)')
 group = parser.add_mutually_exclusive_group()
@@ -309,15 +309,20 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
 
         custom_fields = {}
         # Other NationBuilder Columns
+        if row.get('do_not_call','') == 'TRUE':
+            custom_fields['do_not_call'] = row.get('do_not_call')
         if row.get('mobile_number','') != '' and \
-           not bool(row.get('is_mobile_bad',True)) and \
-           row.get('mobile_opt_in','TRUE'):
+           row.get('is_mobile_bad',"FALSE") == 'FALSE' and \
+           row.get('mobile_opt_in','TRUE') == 'TRUE':
             custom_fields['mobile'] = row['mobile_number']
-        if row.get('phone_number','') != '' and not row['do_not_call']:
+        if row.get('phone_number','') != '' and \
+           row.get('do_not_call',"FALSE") == "FALSE":
             custom_fields['Phone'] = row['phone_number']
+
         # Mapping employer field to organization (custom field)
         if row.get('employer','') != '':
             custom_fields['organization'] = row['employer']
+
         # Pull in social media handles NationBuilder may have
         if row.get('facebook_username','') != '':
             custom_fields['facebook_username'] = row['facebook_username']
@@ -370,7 +375,7 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
             if not CONFIG_DRY_RUN:
                 print("RESPONSE[{}] {}".format(rowid, json.dumps(response.state, indent=4)))
             else:
-                print("NOT EXECUTED[{}] {}".format(rowid, json.dumps(new_person, indent=4)))
+                print("DRYRUN[{}] {}".format(rowid, json.dumps(new_person, indent=4)))
             print("ADD_TAGS:" + str(new_person["add_tags"]))
 
 ENDTIME = datetime.now()
