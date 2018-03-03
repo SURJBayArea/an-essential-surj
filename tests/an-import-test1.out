@@ -1,0 +1,125 @@
+[PREP] an_profiles: SURJ Demo Chapter: API Token found
+[PREP] FOUND COLUMN TAGS: {} {'#Call Representatives': '#Call Representatives', '?Web Design': '?Web Design', '!Phone Bank': '!Phone Bank', 'tag:Request Contact': 'Request Contact'}
+[001] TRY Mc No Email, Deven <> OPT-IN TRUE WITH TAGS !Phone Bank, #Militarization, Demo - Interest - Human Billboard, Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
+[001] SKIP - NO EMAIL
+[002] TRY , Demo <demo+supporter2@surjaction.org> OPT-IN TRUE WITH TAGS #Militarization, Demo - Origin - Website, @Demo
+[002] OK {
+    "person": {
+        "email_addresses": [
+            {
+                "address": "demo+supporter2@surjaction.org"
+            }
+        ],
+        "given_name": "Demo"
+    },
+    "add_tags": [
+        "#Militarization",
+        "Request Contact"
+    ]
+}
+[003] TRY Basebuilder1, Demo <demo+basebuilder1@surjaction.org> OPT-IN TRUE WITH TAGS Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
+[003] OK {
+    "person": {
+        "email_addresses": [
+            {
+                "address": "demo+basebuilder1@surjaction.org"
+            }
+        ],
+        "family_name": "Basebuilder1",
+        "given_name": "Demo"
+    },
+    "add_tags": [
+        "#Call Representatives",
+        "?Web Design"
+    ],
+    "custom_fields": {
+        "Phone": "510 555-5555"
+    }
+}
+[004] TRY Fundraiser2, Demo <demo+fundraiser2@surjaction.org> OPT-IN TRUE WITH TAGS ?Fundraising, Demo - Origin - Website, @Demo
+[004] OK {
+    "person": {
+        "email_addresses": [
+            {
+                "address": "demo+fundraiser2@surjaction.org"
+            }
+        ],
+        "family_name": "Fundraiser2",
+        "given_name": "Demo"
+    },
+    "add_tags": [
+        "?Fundraising",
+        "?Web Design"
+    ],
+    "custom_fields": {
+        "organization": "Royal Jay Ltd"
+    }
+}
+[005] TRY Fundraiser3, Demo <demo+fundraiser3@surjaction.org> OPT-IN TRUE WITH TAGS ?Fundraising, !Phone Bank, Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
+[005] OK {
+    "person": {
+        "email_addresses": [
+            {
+                "address": "demo+fundraiser3@surjaction.org"
+            }
+        ],
+        "family_name": "Fundraiser3",
+        "given_name": "Demo"
+    },
+    "add_tags": [
+        "?Fundraising",
+        "!Phone Bank",
+        "?Web Design"
+    ]
+}
+[006] TRY Basebuilder2, Demo <demo+basebuilder2@surjaction.org> OPT-IN TRUE WITH TAGS Demo - Interest - Human Billboard, !Direct Action, Demo - Origin - Website, @Demo
+[006] OK {
+    "person": {
+        "email_addresses": [
+            {
+                "address": "demo+basebuilder2@surjaction.org"
+            }
+        ],
+        "family_name": "Basebuilder2",
+        "given_name": "Demo"
+    },
+    "add_tags": [
+        "!Direct Action"
+    ]
+}
+[007] TRY Mc Emali Opt Out, Demo <demo+basebuilder3@surjaction.org> OPT-IN FALSE WITH TAGS Demo - Interest - Human Billboard, Demo - Origin - Website, @Demo
+[007] SKIP - UNSUBSCRIBED
+[008] TRY Supporter3, Demo <demo+supporter3@surjaction.org> OPT-IN TRUE WITH TAGS !Direct Action, Demo - Origin - Website, @Demo
+[008] OK {
+    "person": {
+        "email_addresses": [
+            {
+                "address": "demo+supporter3@surjaction.org"
+            }
+        ],
+        "family_name": "Supporter3",
+        "given_name": "Demo",
+        "postal_addresses": [
+            {
+                "address_lines": [
+                    "4000 Railway Rd",
+                    "Suite 399"
+                ],
+                "locality": "Oakland",
+                "region": "CA",
+                "postal_code": "94608",
+                "primary": true
+            }
+        ]
+    },
+    "add_tags": [
+        "!Direct Action",
+        "Request Contact"
+    ],
+    "custom_fields": {
+        "mobile": "510 123-4567",
+        "Phone": "510 123-4567",
+        "organization": "Racial Justice LLC"
+    }
+}
+Processed 6 activists in 0:00:00.001426 4208/sec.

@@ -10,13 +10,12 @@ import argparse
 import json
 import csv
 import logging
+import sys
 from datetime import datetime
 from restnavigator import Navigator
 import string
 
 # Find your token at Start Organizing > Details > API & Sync
-
-flag_log = True          # Print what happens - NOT FLLLY IMPLEMENTED YET - prefer python logging!
 
 ############################################################
 #  usage: import_an_people.py ... inputfile
@@ -38,6 +37,9 @@ parser.add_argument('--dryrun', '-d', action="store_true",
                     help="Process imported data but don't send to Action Network")
 parser.add_argument('--no', '-n', type=str, default=default_no,
                     help="Comma separated strings that mean no tag (for tag columns)")
+parser.add_argument('--logfile', '-l', type=str, default="-",
+                    help="Activity log")
+parser.add_argument('--skip', action="store_true", help="Skip importing earlier imports (as per log file)")
 parser.add_argument('inputFile', help='Importable CSV file')
 
 args = parser.parse_args()
@@ -49,6 +51,8 @@ CONFIG_FORCE = args.force
 CONFIG_START_INDEX = args.start
 CONFIG_INCLUDE_UNSUBSCRIBED = args.unsubscribed
 CONFIG_DRY_RUN = args.dryrun
+CONFIG_SKIP = args.skip
+CONFIG_LOGFILE = args.logfile
 CONFIG_NO = {key: i for i, key in enumerate(args.no.lower().split(','))}  # {'no':0, 'FALSE':1 ... }
 
 MAXINDEX = 1000000
@@ -58,6 +62,12 @@ elif args.count is not None:
     CONFIG_END_INDEX = CONFIG_START_INDEX + args.count - 1
 else:
     CONFIG_END_INDEX = MAXINDEX
+
+####
+if not CONFIG_LOGFILE or CONFIG_LOGFILE == '-':
+    log_fh = sys.stdout
+else:
+    log_fh = open(CONFIG_LOGFILE, 'w')
 
 ####################################
 
@@ -74,7 +84,7 @@ if api_token == "Not Found":
     assert api_token != "Not Found", CONFIG_CHAPTER + ": API Token not found"
 else:
     if CONFIG_VERBOSE:
-        print("an_profiles: {}: API Token found".format(CONFIG_CHAPTER))
+        print("[PREP] an_profiles: {}: API Token found".format(CONFIG_CHAPTER), file=log_fh)
 
 aep = 'https://actionnetwork.org/api/v2/people/'
 
@@ -150,7 +160,7 @@ def get_tag_mapping(_importFile, _chapter):
     _map = {}
     with open(_importFile, 'r') as file:
         _reader = csv.DictReader(file)
-        if not _chapter in _reader.fieldnames:
+        if _chapter not in _reader.fieldnames:
             logging.warning("Could not find {} in {}".format(_chapter,str(_reader.fieldnames)))
         else:
             for _row in _reader:
@@ -184,8 +194,8 @@ def map_person_tags(tag_list):
         if old_tag == "":
             continue
         # Just because the tag doesn't exist doesn't mean it's not defined
-        if not old_tag in tag_mapping:
-            if not old_tag in found_old_tag_already:
+        if old_tag not in tag_mapping:
+            if old_tag not in found_old_tag_already:
                 warn_str = "WARNING: Unknown tag not mapped: <{}>".format(old_tag)
                 print(warn_str)
                 logging.warning(warn_str)
@@ -221,8 +231,7 @@ def get_column_tags(columns):
                  _column_tags[_col] = _col
     
     return _column_tags
-
-
+    
 # These are the tags we looked up that are used in the current group
 # but they don't represent all the available tags - especially
 # the ones from the parent.
@@ -242,23 +251,24 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
     reader = csv.DictReader(ifile)
     column_tags = get_column_tags(reader.fieldnames)
     if CONFIG_VERBOSE:
-        print('FOUND COLUMN TAGS: {}', column_tags)
+        print('[PREP] FOUND COLUMN TAGS: {}', column_tags, file=log_fh)
     for row in reader:
         rowid = rowid + 1
         if not CONFIG_START_INDEX <= rowid <= CONFIG_END_INDEX:
             continue
 
-        print("[{:0>3}] {}, {} <{}> OPT-IN {} WITH TAGS {}".format(rowid,
+        print("[{:0>3}] TRY {}, {} <{}> OPT-IN {} WITH TAGS {}".format(rowid,
                                                                    row.get('last_name'),
                                                                    row.get('first_name'),
                                                                    row['email'],
                                                                    row.get('email_opt_in'),
-                                                                   row.get('tag_list')))
+                                                                   row.get('tag_list')),
+                                                                   flush=True, file=log_fh)
 
         # Action Network people import via an API must have an email
         # (exception is importnig a donation where AN will generate a fake email)
         if row['email'] == '':
-            print("NO EMAIL - IMPORT SKIPPED")
+            print("[{:0>3}] SKIP - NO EMAIL".format(rowid), file=log_fh)
             continue
 
         # Clear the new_person dict and set the only required field
@@ -272,7 +282,7 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
         if row.get('email_opt_in') == 'FALSE':
             new_person["person"]["email_addresses"][0]["status"] = 'unsubscribed'
             if not CONFIG_INCLUDE_UNSUBSCRIBED:
-                print("UNSUBSCRIBED - IMPORT SKIPPED")
+                print("[{:0>3}] SKIP - UNSUBSCRIBED".format(rowid, file=log_fh))
                 continue
         else:
             if CONFIG_FORCE:
@@ -372,18 +382,24 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
         activists = activists + 1
 
         if CONFIG_VERBOSE:
-            if not CONFIG_DRY_RUN:
-                print("RESPONSE[{}] {}".format(rowid, json.dumps(response.state, indent=4)))
+            if CONFIG_DRY_RUN:
+                show_tree = new_person
             else:
-                print("DRYRUN[{}] {}".format(rowid, json.dumps(new_person, indent=4)))
-            print("ADD_TAGS:" + str(new_person["add_tags"]))
+                show_tree = response.state
+            print("[{:0>3}] OK {}".format(rowid, json.dumps(show_tree, indent=4)), flush=True, file=log_fh)
+        else:
+           print("[{:0>3}] OK".format(rowid), flush=True, file=log_fh)
+            
 
 ENDTIME = datetime.now()
 duration = ENDTIME - starttime
-
-print('Processed {} activists in {}'.format(activists, duration))
-
 duration_microseconds = duration.seconds * 1000000 + duration.microseconds
 
+act_per_second = ""
 if activists > 0:
-    print('Activists per second: {:.0f}'.format(1000000.0 / (duration_microseconds / activists)))
+    act_per_second = "{:.0f}/sec.".format(1000000.0 / (duration_microseconds / activists))
+
+print('Processed {} activists in {} {}'.format(activists, duration, act_per_second), file=log_fh)
+
+if log_fh != sys.stdout:
+    log_fh.close()
