@@ -11,6 +11,7 @@ import json
 import csv
 import logging
 import sys
+import os.path
 from datetime import datetime
 from restnavigator import Navigator
 import string
@@ -64,10 +65,36 @@ else:
     CONFIG_END_INDEX = MAXINDEX
 
 ####
+# Log file 
+#
+skip_item = {}
+
 if not CONFIG_LOGFILE or CONFIG_LOGFILE == '-':
     log_fh = sys.stdout
+    if CONFIG_SKIP:
+        raise Warning("Option --skip ignored for stdin")
 else:
-    log_fh = open(CONFIG_LOGFILE, 'w')
+    if not os.path.isfile(CONFIG_LOGFILE):
+        log_fh = open(CONFIG_LOGFILE, 'w')
+    else:
+        if not CONFIG_SKIP:
+            raise Exception("{}: File exists. Use --skip or remove file.".format(CONFIG_LOGFILE))
+     
+        # Remember items to skip
+        with open(CONFIG_LOGFILE, 'r') as existing_logfile:
+            # [999] VERB ABC DEF -> ('[999]', 'VERB', 'ABC DEF")
+            while True: 
+                log_line = existing_logfile.readline()
+                if not log_line:
+                    break
+                log_line_tokens = log_line.split(None, 2)
+                if len(log_line_tokens) >= 2:
+                    verb = log_line_tokens[1]
+                    if verb == 'OK' or verb == 'SKIP':
+                        itemid = int(log_line_tokens[0][1:-1])
+                        skip_item[itemid] = verb
+
+        log_fh = open(CONFIG_LOGFILE, 'a')
 
 ####################################
 
@@ -254,9 +281,15 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
         print('[PREP] FOUND COLUMN TAGS: {}', column_tags, file=log_fh)
     for row in reader:
         rowid = rowid + 1
+
         if not CONFIG_START_INDEX <= rowid <= CONFIG_END_INDEX:
             continue
 
+        if CONFIG_SKIP and rowid in skip_item:
+            if CONFIG_VERBOSE:
+                print("[{:0>3}] SKIP - ALREADY PROCESSED".format(rowid), file=log_fh)
+            continue
+    
         print("[{:0>3}] TRY {}, {} <{}> OPT-IN {} WITH TAGS {}".format(rowid,
                                                                    row.get('last_name'),
                                                                    row.get('first_name'),
@@ -282,7 +315,7 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
         if row.get('email_opt_in') == 'FALSE':
             new_person["person"]["email_addresses"][0]["status"] = 'unsubscribed'
             if not CONFIG_INCLUDE_UNSUBSCRIBED:
-                print("[{:0>3}] SKIP - UNSUBSCRIBED".format(rowid, file=log_fh))
+                print("[{:0>3}] SKIP - UNSUBSCRIBED".format(rowid), file=log_fh)
                 continue
         else:
             if CONFIG_FORCE:
@@ -399,7 +432,7 @@ act_per_second = ""
 if activists > 0:
     act_per_second = "{:.0f}/sec.".format(1000000.0 / (duration_microseconds / activists))
 
-print('Processed {} activists in {} {}'.format(activists, duration, act_per_second), file=log_fh)
+print('{}: Processed {} activists in {} {}'.format(CONFIG_LOGFILE, activists, duration, act_per_second), file=sys.stderr)
 
 if log_fh != sys.stdout:
     log_fh.close()

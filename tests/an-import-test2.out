@@ -1,60 +1,19 @@
+[001] TRY - 1 TEN 10 LINES IS KEPT
+[001] SKIP - 2
+[002] TRY - 3
+[002] OK - 4
+[003] TRY - 5
+[003] OK - 6
+[004] TRY - 7
+[004] OK - 8
+[004] PENULTIMATE - 8
+[004] LASTONE - 8
 [PREP] an_profiles: SURJ Demo Chapter: API Token found
 [PREP] FOUND COLUMN TAGS: {} {'#Call Representatives': '#Call Representatives', '?Web Design': '?Web Design', '!Phone Bank': '!Phone Bank', 'tag:Request Contact': 'Request Contact'}
-[001] TRY Mc No Email, Deven <> OPT-IN TRUE WITH TAGS !Phone Bank, #Militarization, Demo - Interest - Human Billboard, Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
-[001] SKIP - NO EMAIL
-[002] TRY , Demo <demo+supporter2@surjaction.org> OPT-IN TRUE WITH TAGS #Militarization, Demo - Origin - Website, @Demo
-[002] OK {
-    "person": {
-        "email_addresses": [
-            {
-                "address": "demo+supporter2@surjaction.org"
-            }
-        ],
-        "given_name": "Demo"
-    },
-    "add_tags": [
-        "#Militarization",
-        "Request Contact"
-    ]
-}
-[003] TRY Basebuilder1, Demo <demo+basebuilder1@surjaction.org> OPT-IN TRUE WITH TAGS Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
-[003] OK {
-    "person": {
-        "email_addresses": [
-            {
-                "address": "demo+basebuilder1@surjaction.org"
-            }
-        ],
-        "family_name": "Basebuilder1",
-        "given_name": "Demo"
-    },
-    "add_tags": [
-        "#Call Representatives",
-        "?Web Design"
-    ],
-    "custom_fields": {
-        "Phone": "510 555-5555"
-    }
-}
-[004] TRY Fundraiser2, Demo <demo+fundraiser2@surjaction.org> OPT-IN TRUE WITH TAGS ?Fundraising, Demo - Origin - Website, @Demo
-[004] OK {
-    "person": {
-        "email_addresses": [
-            {
-                "address": "demo+fundraiser2@surjaction.org"
-            }
-        ],
-        "family_name": "Fundraiser2",
-        "given_name": "Demo"
-    },
-    "add_tags": [
-        "?Fundraising",
-        "?Web Design"
-    ],
-    "custom_fields": {
-        "organization": "Royal Jay Ltd"
-    }
-}
+[001] SKIP - ALREADY PROCESSED
+[002] SKIP - ALREADY PROCESSED
+[003] SKIP - ALREADY PROCESSED
+[004] SKIP - ALREADY PROCESSED
 [005] TRY Fundraiser3, Demo <demo+fundraiser3@surjaction.org> OPT-IN TRUE WITH TAGS ?Fundraising, !Phone Bank, Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
 [005] OK {
     "person": {

@@ -4,8 +4,9 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+    
     {
-        "name": "Python test.csv",
+        "name": "test1 - Verbose",
         "type": "python",
         "request": "launch",
         "stopOnEntry": true,
@@ -14,8 +15,29 @@
         "args": [
             "--group", "SURJ Demo Chapter",
             "--dryrun",
-            "test.csv"
-         
+            "--verbose",
+            "tests/an-import-test1.csv"
+        ],
+        "cwd": "${workspaceFolder}",
+        "env": {},
+        "envFile": "${workspaceFolder}/.env",
+        "debugOptions": [
+            "RedirectOutput"
+        ]
+    },
+    {
+        "name": "test2 - Skip",
+        "type": "python",
+        "request": "launch",
+        "stopOnEntry": true,
+        "pythonPath": "${config:python.pythonPath}",
+        "program": "${file}",
+        "args": [
+            "--group", "SURJ Demo Chapter",
+            "--skip",
+            "--dryrun",
+            "--logfile", "tests/an-import-test2.tmp",
+            "tests/an-import-test1.csv"
         ],
         "cwd": "${workspaceFolder}",
         "env": {},

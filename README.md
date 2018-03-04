@@ -14,29 +14,33 @@ Takes NationBuilder or other csv file, mapping tags and fields.
     usage: an-import-people.py [-h] [--group GROUP] [--start START]
                             [--end END | --count COUNT] [--verbose]
                             [--unsubscribed] [--force] [--dryrun] [--no NO]
+                            [--logfile LOGFILE] [--skip]
                             inputFile
 
     Import people from a NationBuilder or MailChimp Export (CSV)
 
     positional arguments:
-    inputFile               Importable CSV file (NationBuilde)
+        inputFile             Importable CSV file
 
     optional arguments:
-    -h, --help              show this help message and exit
-    --group GROUP, -g GROUP
-                            Action Network Group. Also profile name in
-                            an_profiles.py.
-    --start START, -s START
-                            First row to process (starting at 1)
-    --end END, -e END       Last row to process
-    --count COUNT, -c COUNT
-                            Number of rows to process
-    --verbose, -v           Show data
-    --unsubscribed, -u      Include unsubscribed users
-    --force, -f             Force subscribe of existing users
-    --dryrun, -d            Process imported data but don't send to Action Network
-    --no NO, -n NO          Comma separated strings that mean no tag (for tag
-                            columns)
+        -h, --help            show this help message and exit
+        --group GROUP, -g GROUP
+                                Action Network Group. Also profile name in
+                                an_profiles.py.
+        --start START, -s START
+                                First row to process (starting at 1)
+        --end END, -e END     Last row to process
+        --count COUNT, -c COUNT
+                                Number of rows to process
+        --verbose, -v         Show data
+        --unsubscribed, -u    Include unsubscribed users
+        --force, -f           Force subscribe of existing users
+        --dryrun, -d          Process imported data but don't send to Action Network
+        --no NO, -n NO        Comma separated strings that mean no tag (for tag
+                                columns)
+        --logfile LOGFILE, -l LOGFILE
+                                Activity log
+        --skip                Skip importing earlier imports (as per log file)
 
   
 ## Installation

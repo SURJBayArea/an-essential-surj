@@ -102,3 +102,5 @@ ENV/
 
 an_profiles\.py
 logs/
+
+*.tmp
