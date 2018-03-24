@@ -2,8 +2,8 @@
 [PREP] FOUND COLUMN TAGS: {} {'#Call Representatives': '#Call Representatives', '?Web Design': '?Web Design', '!Phone Bank': '!Phone Bank', 'tag:Request Contact': 'Request Contact'}
 [001] TRY Mc No Email, Deven <> OPT-IN TRUE WITH TAGS !Phone Bank, #Militarization, Demo - Interest - Human Billboard, Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
 [001] SKIP - NO EMAIL
-[002] TRY , Demo <demo+supporter2@surjaction.org> OPT-IN TRUE WITH TAGS #Militarization, Demo - Origin - Website, @Demo
-[002] OK {
+[002] TRY , Demo <demo+supporter2@surjaction.org> OPT-IN TRUE WITH TAGS #Militarization, #Study_Action, Demo - Origin - Website, @Demo
+[002] OK DRY {
     "person": {
         "email_addresses": [
             {
@@ -14,11 +14,12 @@
     },
     "add_tags": [
         "#Militarization",
+        "!Study & Action",
         "Request Contact"
     ]
 }
 [003] TRY Basebuilder1, Demo <demo+basebuilder1@surjaction.org> OPT-IN TRUE WITH TAGS Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
-[003] OK {
+[003] OK DRY {
     "person": {
         "email_addresses": [
             {
@@ -37,7 +38,7 @@
     }
 }
 [004] TRY Fundraiser2, Demo <demo+fundraiser2@surjaction.org> OPT-IN TRUE WITH TAGS ?Fundraising, Demo - Origin - Website, @Demo
-[004] OK {
+[004] OK DRY {
     "person": {
         "email_addresses": [
             {
@@ -55,8 +56,8 @@
         "organization": "Royal Jay Ltd"
     }
 }
-[005] TRY Fundraiser3, Demo <demo+fundraiser3@surjaction.org> OPT-IN TRUE WITH TAGS ?Fundraising, !Phone Bank, Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
-[005] OK {
+[005] TRY Fundraiser3, Demo <demo+fundraiser3@surjaction.org> OPT-IN TRUE WITH TAGS ?Fundraising, #Study_Action, !Phone Bank, Demo - Origin - Action 2017-03, Demo - Origin - Website, @Demo
+[005] OK DRY {
     "person": {
         "email_addresses": [
             {
@@ -68,12 +69,13 @@
     },
     "add_tags": [
         "?Fundraising",
+        "!Study & Action",
         "!Phone Bank",
         "?Web Design"
     ]
 }
 [006] TRY Basebuilder2, Demo <demo+basebuilder2@surjaction.org> OPT-IN TRUE WITH TAGS Demo - Interest - Human Billboard, !Direct Action, Demo - Origin - Website, @Demo
-[006] OK {
+[006] OK DRY {
     "person": {
         "email_addresses": [
             {
@@ -84,13 +86,14 @@
         "given_name": "Demo"
     },
     "add_tags": [
+        "Human Billboard",
         "!Direct Action"
     ]
 }
 [007] TRY Mc Emali Opt Out, Demo <demo+basebuilder3@surjaction.org> OPT-IN FALSE WITH TAGS Demo - Interest - Human Billboard, Demo - Origin - Website, @Demo
 [007] SKIP - UNSUBSCRIBED
 [008] TRY Supporter3, Demo <demo+supporter3@surjaction.org> OPT-IN TRUE WITH TAGS !Direct Action, Demo - Origin - Website, @Demo
-[008] OK {
+[008] OK DRY {
     "person": {
         "email_addresses": [
             {

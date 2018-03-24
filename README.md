@@ -11,10 +11,10 @@ Takes NationBuilder or other csv file, mapping tags and fields.
 
 ### Usage
 
-    usage: an-import-people.py [-h] [--group GROUP] [--start START]
-                            [--end END | --count COUNT] [--verbose]
-                            [--unsubscribed] [--force] [--dryrun] [--no NO]
-                            [--logfile LOGFILE] [--skip]
+    usage: an-import-people.py [-h] [--group GRP] [--start N]
+                            [--end N | --count N] [--verbose] [--unsubscribed]
+                            [--force] [--dryrun] [--no NOS] [--logfile LOGFILE]
+                            [--skip]
                             inputFile
 
     Import people from a NationBuilder or MailChimp Export (CSV)
@@ -24,19 +24,16 @@ Takes NationBuilder or other csv file, mapping tags and fields.
 
     optional arguments:
         -h, --help            show this help message and exit
-        --group GROUP, -g GROUP
-                                Action Network Group. Also profile name in
+        --group GRP, -g GRP   Action Network Group. Also profile name in
                                 an_profiles.py.
-        --start START, -s START
-                                First row to process (starting at 1)
-        --end END, -e END     Last row to process
-        --count COUNT, -c COUNT
-                                Number of rows to process
+        --start N, -s N       First row to process (starting at 1)
+        --end N, -e N         Last row to process
+        --count N, -c N       Number of rows to process
         --verbose, -v         Show data
         --unsubscribed, -u    Include unsubscribed users
         --force, -f           Force subscribe of existing users
         --dryrun, -d          Process imported data but don't send to Action Network
-        --no NO, -n NO        Comma separated strings that mean no tag (for tag
+        --no NOS, -n NOS      Comma separated strings that mean no tag (for tag
                                 columns)
         --logfile LOGFILE, -l LOGFILE
                                 Activity log

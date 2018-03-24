@@ -1,7 +1,7 @@
 
-default:	test2_diff
+default:	help
 
-help:	## Show this help.
+help:		## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
 TEST1 = ./an-import-people.py -v -d tests/an-import-test1.csv
@@ -12,7 +12,7 @@ TEST2 = head -n 10 tests/an-import-test2.out > $(TEST2_TMP); ./an-import-people.
 
 test: test1_diff test2_diff ## Run all tests
 
-test1:	## Dry run test1
+test1:		## Dry run test1
 	$(TEST1)
 
 test1_diff:	## Dry run test1 (diff against baseline test)
@@ -21,7 +21,7 @@ test1_diff:	## Dry run test1 (diff against baseline test)
 test1_rebase:	## Create new output baseline for test1
 	$(TEST1) > tests/an-import-test1.out
 
-test2:	## Dry run test2
+test2:		## Dry run test2
 	$(TEST2)
 
 test2_diff:	## Dry run test2 (diff against baseline test)

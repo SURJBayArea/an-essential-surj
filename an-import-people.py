@@ -9,11 +9,12 @@
 import argparse
 import json
 import csv
+import time
 import logging
 import sys
 import os.path
 from datetime import datetime
-from restnavigator import Navigator
+from restnavigator import Navigator, exc
 import string
 
 # Find your token at Start Organizing > Details > API & Sync
@@ -26,17 +27,18 @@ default_no = "no,n,false,n/a,off,0,Not at this time"
 
 parser = argparse.ArgumentParser(description='Import people from a NationBuilder or MailChimp Export (CSV)')
 group = parser.add_mutually_exclusive_group()
-parser.add_argument('--group', '-g', default=default_chapter, help='Action Network Group. Also profile name in an_profiles.py.')
-parser.add_argument('--start', '-s', default=1, type=int,
+parser.add_argument('--group', '-g', default=default_chapter, metavar='GRP',
+                    help='Action Network Group. Also profile name in an_profiles.py.')
+parser.add_argument('--start', '-s', default=1, type=int, metavar='N',
                     help='First row to process (starting at 1)')
-group.add_argument('--end', '-e', type=int, help='Last row to process')
-group.add_argument('--count', '-c', type=int, help='Number of rows to process')
+group.add_argument('--end', '-e', type=int, metavar='N', help='Last row to process')
+group.add_argument('--count', '-c', type=int, metavar='N', help='Number of rows to process')
 parser.add_argument('--verbose', '-v', action="store_true", help="Show data")
 parser.add_argument('--unsubscribed', '-u', action="store_true", help="Include unsubscribed users")
 parser.add_argument('--force', '-f', action="store_true", help="Force subscribe of existing users")
 parser.add_argument('--dryrun', '-d', action="store_true",
                     help="Process imported data but don't send to Action Network")
-parser.add_argument('--no', '-n', type=str, default=default_no,
+parser.add_argument('--no', '-n', type=str, default=default_no, metavar='NOS',
                     help="Comma separated strings that mean no tag (for tag columns)")
 parser.add_argument('--logfile', '-l', type=str, default="-",
                     help="Activity log")
@@ -48,7 +50,7 @@ args = parser.parse_args()
 CONFIG_CHAPTER = args.group
 CONFIG_IMPORTFILE = args.inputFile
 CONFIG_VERBOSE = args.verbose
-CONFIG_FORCE = args.force
+CONFIG_FORCE_SUBSCRIBED = args.force
 CONFIG_START_INDEX = args.start
 CONFIG_INCLUDE_UNSUBSCRIBED = args.unsubscribed
 CONFIG_DRY_RUN = args.dryrun
@@ -165,8 +167,6 @@ def get_action_network_tags():
     _rn = Navigator.hal('https://actionnetwork.org/api/v2/tags')
     _rn.headers['OSDI-API-Token'] = api_token
 
-    #pdb.set_trace()
-
     _osdi_tags = _rn['osdi:tags']
 
     _an_tags = {}
@@ -196,12 +196,13 @@ def get_tag_mapping(_importFile, _chapter):
                 for new_tag in _row['new_tags'].split(","):
                     _new_tags.append(new_tag.strip())
                 if _row[_chapter] != '':
+                    if _new_tags[0] == 'IGNORE':
+                        _new_tags = []
                     for new_tag in _row[_chapter].split(","):
                         _new_tags.append(new_tag.strip())
 
                 _map[_row['old_tag']] = _new_tags  # an array
 
-                #print(_row['old_tag'], _new_tags)
     return _map
 
 
@@ -277,7 +278,7 @@ activists = 0
 with open(CONFIG_IMPORTFILE, 'r') as ifile:
     reader = csv.DictReader(ifile)
     column_tags = get_column_tags(reader.fieldnames)
-    if CONFIG_VERBOSE:
+    if column_tags and CONFIG_VERBOSE:
         print('[PREP] FOUND COLUMN TAGS: {}', column_tags, file=log_fh)
     for row in reader:
         rowid = rowid + 1
@@ -318,7 +319,7 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
                 print("[{:0>3}] SKIP - UNSUBSCRIBED".format(rowid), file=log_fh)
                 continue
         else:
-            if CONFIG_FORCE:
+            if CONFIG_FORCE_SUBSCRIBED:
                 new_person["person"]["email_addresses"][0]["status"] = 'subscribed'
 
         # Add first and last name if available
@@ -344,11 +345,13 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
         new_person["add_tags"] = []
         if 'tag_list' in row:
             new_person["add_tags"] = map_person_tags(row['tag_list'])
+
         # Column Tag Mapping
         for column, column_tag in column_tags.items():
             cell = row[column].lower()
             if cell != '' and not cell in CONFIG_NO:
                 new_person["add_tags"].append(column_tag)
+        # Note: new_person["add_tags"] may have duplicates
 
         custom_fields = {}
         # Other NationBuilder Columns
@@ -362,11 +365,11 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
            row.get('do_not_call',"FALSE") == "FALSE":
             custom_fields['Phone'] = row['phone_number']
 
-        # Mapping employer field to organization (custom field)
+        # Mapping employer field to organization (custom field in AN)
         if row.get('employer','') != '':
             custom_fields['organization'] = row['employer']
 
-        # Pull in social media handles NationBuilder may have
+        # Pull in social media handles NationBuilder may have (custom fields in AN)
         if row.get('facebook_username','') != '':
             custom_fields['facebook_username'] = row['facebook_username']
         if row.get('twitter_login','') != '':
@@ -393,22 +396,42 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
                 new_person["person"]["postal_addresses"] = []
             new_person["person"]["postal_addresses"].append(address)
 
-        #print json.dumps(new_person, indent=4)
-
         # This request uses the Person Helper
         # (which doesn't support custom fields or multiple addresses?)
         response = {}
+        user = {}
         if not CONFIG_DRY_RUN:
             an_self = AN['self']
-            user = an_self.create(new_person)
-            response = user
+            for tries in range(1,6):
+                try:
+                    user = an_self.create(new_person)  # Can throw a 503 Service Temporarily Unavailable error
+                    response = user
+                    break
+                except exc.HALNavigatorError as inst:
+                    print("[{:0>3}] Create Exception: HALNavigatorError: {}".format(rowid, inst), flush=True, file=log_fh)
+                    print("[{:0>3}] Create Exception: Retrying after {} seconds".format(rowid, tries))
+                    time.sleep(tries)
+            if not response:
+                print("[{:0>3}] FAIL Insert".format(rowid), flush=True, file=log_fh)
+                continue
 
         # Need to do a Person PUT to add custom fields.
         if custom_fields:
             if 'tag_list' in custom_fields:
                 del custom_fields['tag_list']
             if not CONFIG_DRY_RUN:
-                response = user['self'].upsert({"custom_fields" : custom_fields})
+                response = {}
+                for tries in range(1,5):
+                    try:
+                        response = user['self'].upsert({"custom_fields" : custom_fields})
+                        break
+                    except exc.HALNavigatorError as inst:
+                        print("[{:0>3}] Upsert Exception: HALNavigatorError: {}".format(rowid, inst), flush=True, file=log_fh)
+                        print("[{:0>3}] Upsert Exception: Retrying after {tries} seconds".format(rowid, tries=tries))
+                        time.sleep(tries)
+                if not response:
+                    print("[{:0>3}] FAIL Upsert (Create OK)".format(rowid), flush=True, file=log_fh)
+                    continue
             else:
                 new_person["custom_fields"] = custom_fields
 
@@ -419,7 +442,12 @@ with open(CONFIG_IMPORTFILE, 'r') as ifile:
                 show_tree = new_person
             else:
                 show_tree = response.state
-            print("[{:0>3}] OK {}".format(rowid, json.dumps(show_tree, indent=4)), flush=True, file=log_fh)
+                show_tree["add_tags"] = new_person["add_tags"]
+
+            print("[{:0>3}] OK {dry}{tree}".format(rowid,
+                                                    dry="DRY " if CONFIG_DRY_RUN else '',
+                                                    tree=json.dumps(show_tree, indent=4)),
+                  flush=True, file=log_fh)
         else:
            print("[{:0>3}] OK".format(rowid), flush=True, file=log_fh)
             
