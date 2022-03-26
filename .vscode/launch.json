@@ -10,7 +10,7 @@
         "type": "python",
         "request": "launch",
         "stopOnEntry": true,
-        "pythonPath": "${config:python.pythonPath}",
+        "python": "${command:python.interpreterPath}",
         "program": "${file}",
         "args": [
             "--group", "SURJ Demo Chapter",
@@ -30,7 +30,7 @@
         "type": "python",
         "request": "launch",
         "stopOnEntry": true,
-        "pythonPath": "${config:python.pythonPath}",
+        "python": "${command:python.interpreterPath}",
         "program": "${file}",
         "args": [
             "--group", "SURJ Demo Chapter",
@@ -51,7 +51,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": true,
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${file}",
             "cwd": "${workspaceFolder}",
             "env": {},
@@ -75,7 +75,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": true,
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${file}",
             "cwd": "",
             "console": "integratedTerminal",
@@ -88,7 +88,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": true,
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${file}",
             "cwd": "",
             "console": "externalTerminal",
@@ -101,7 +101,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": true,
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/manage.py",
             "cwd": "${workspaceFolder}",
             "args": [
@@ -121,7 +121,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "fully qualified path fo 'flask' executable. Generally located along with python interpreter",
             "cwd": "${workspaceFolder}",
             "env": {
@@ -142,7 +142,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": false,
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/run.py",
             "cwd": "${workspaceFolder}",
             "args": [],
@@ -158,13 +158,13 @@
             "request": "launch",
             "stopOnEntry": true,
             "osx": {
-                "pythonPath": "${env:SPARK_HOME}/bin/spark-submit"
+                "python": "${env:SPARK_HOME}/bin/spark-submit"
             },
             "windows": {
-                "pythonPath": "${env:SPARK_HOME}/bin/spark-submit.cmd"
+                "python": "${env:SPARK_HOME}/bin/spark-submit.cmd"
             },
             "linux": {
-                "pythonPath": "${env:SPARK_HOME}/bin/spark-submit"
+                "python": "${env:SPARK_HOME}/bin/spark-submit"
             },
             "program": "${file}",
             "cwd": "${workspaceFolder}",
@@ -179,7 +179,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": true,
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "module": "module.name",
             "cwd": "${workspaceFolder}",
             "env": {},
@@ -193,7 +193,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": true,
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "cwd": "${workspaceFolder}",
             "env": {},
             "envFile": "${workspaceFolder}/.env",
@@ -210,7 +210,7 @@
             "type": "python",
             "request": "launch",
             "stopOnEntry": true,
-            "pythonPath": "${config:python.pythonPath}",
+            "python": "${command:python.interpreterPath}",
             "program": "${workspaceFolder}/console.py",
             "cwd": "${workspaceFolder}",
             "args": [

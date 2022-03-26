@@ -104,3 +104,5 @@ an_profiles\.py
 logs/
 
 *.tmp
+.vscode/launch.json
+.vscode/settings.json
